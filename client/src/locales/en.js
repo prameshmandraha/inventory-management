@@ -221,6 +221,41 @@ export default {
     }
   },
 
+  // Reports
+  reports: {
+    title: 'Performance Reports',
+    description: 'View quarterly performance metrics and monthly trends',
+    quarterlyPerformance: {
+      title: 'Quarterly Performance',
+      table: {
+        quarter: 'Quarter',
+        totalOrders: 'Total Orders',
+        totalRevenue: 'Total Revenue',
+        avgOrderValue: 'Avg Order Value',
+        fulfillmentRate: 'Fulfillment Rate'
+      }
+    },
+    monthlyRevenueTrend: {
+      title: 'Monthly Revenue Trend'
+    },
+    monthlyAnalysis: {
+      title: 'Month-over-Month Analysis',
+      table: {
+        month: 'Month',
+        orders: 'Orders',
+        revenue: 'Revenue',
+        change: 'Change',
+        growthRate: 'Growth Rate'
+      }
+    },
+    summary: {
+      totalRevenueYTD: 'Total Revenue (YTD)',
+      avgMonthlyRevenue: 'Avg Monthly Revenue',
+      totalOrdersYTD: 'Total Orders (YTD)',
+      bestPerformingQuarter: 'Best Performing Quarter'
+    }
+  },
+
   // Filters
   filters: {
     timePeriod: 'Time Period',

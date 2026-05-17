@@ -1,27 +1,27 @@
 <template>
   <div class="reports">
     <div class="page-header">
-      <h2>Performance Reports</h2>
-      <p>View quarterly performance metrics and monthly trends</p>
+      <h2>{{ t('reports.title') }}</h2>
+      <p>{{ t('reports.description') }}</p>
     </div>
 
-    <div v-if="loading" class="loading">Loading reports...</div>
+    <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else>
       <!-- Quarterly Performance -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Quarterly Performance</h3>
+          <h3 class="card-title">{{ t('reports.quarterlyPerformance.title') }}</h3>
         </div>
         <div class="table-container">
           <table class="reports-table">
             <thead>
               <tr>
-                <th>Quarter</th>
-                <th>Total Orders</th>
-                <th>Total Revenue</th>
-                <th>Avg Order Value</th>
-                <th>Fulfillment Rate</th>
+                <th>{{ t('reports.quarterlyPerformance.table.quarter') }}</th>
+                <th>{{ t('reports.quarterlyPerformance.table.totalOrders') }}</th>
+                <th>{{ t('reports.quarterlyPerformance.table.totalRevenue') }}</th>
+                <th>{{ t('reports.quarterlyPerformance.table.avgOrderValue') }}</th>
+                <th>{{ t('reports.quarterlyPerformance.table.fulfillmentRate') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -44,7 +44,7 @@
       <!-- Monthly Trends Chart -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Monthly Revenue Trend</h3>
+          <h3 class="card-title">{{ t('reports.monthlyRevenueTrend.title') }}</h3>
         </div>
         <div class="chart-container">
           <div class="bar-chart">
@@ -65,17 +65,17 @@
       <!-- Month-over-Month Comparison -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Month-over-Month Analysis</h3>
+          <h3 class="card-title">{{ t('reports.monthlyAnalysis.title') }}</h3>
         </div>
         <div class="table-container">
           <table class="reports-table">
             <thead>
               <tr>
-                <th>Month</th>
-                <th>Orders</th>
-                <th>Revenue</th>
-                <th>Change</th>
-                <th>Growth Rate</th>
+                <th>{{ t('reports.monthlyAnalysis.table.month') }}</th>
+                <th>{{ t('reports.monthlyAnalysis.table.orders') }}</th>
+                <th>{{ t('reports.monthlyAnalysis.table.revenue') }}</th>
+                <th>{{ t('reports.monthlyAnalysis.table.change') }}</th>
+                <th>{{ t('reports.monthlyAnalysis.table.growthRate') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -104,19 +104,19 @@
       <!-- Summary Stats -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-label">Total Revenue (YTD)</div>
+          <div class="stat-label">{{ t('reports.summary.totalRevenueYTD') }}</div>
           <div class="stat-value">${{ formatNumber(totalRevenue) }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Avg Monthly Revenue</div>
+          <div class="stat-label">{{ t('reports.summary.avgMonthlyRevenue') }}</div>
           <div class="stat-value">${{ formatNumber(avgMonthlyRevenue) }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Total Orders (YTD)</div>
+          <div class="stat-label">{{ t('reports.summary.totalOrdersYTD') }}</div>
           <div class="stat-value">{{ totalOrders }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Best Performing Quarter</div>
+          <div class="stat-label">{{ t('reports.summary.bestPerformingQuarter') }}</div>
           <div class="stat-value">{{ bestQuarter }}</div>
         </div>
       </div>
@@ -126,6 +126,9 @@
 
 <script>
 import axios from 'axios'
+import { watch } from 'vue'
+import { useFilters } from '../composables/useFilters'
+import { useI18n } from '../composables/useI18n'
 
 export default {
   name: 'Reports',
@@ -143,23 +146,44 @@ export default {
   },
   mounted() {
     console.log('Reports component mounted')
+    const { selectedPeriod, selectedLocation, selectedCategory, selectedStatus } = useFilters()
+    const { currentLocale } = useI18n()
+
+    // Watch for filter changes and reload data
+    watch([selectedPeriod, selectedLocation, selectedCategory, selectedStatus], () => {
+      console.log('Filters changed, reloading reports data')
+      this.loadData()
+    })
+
+    // Watch for locale changes and reload data
+    watch(currentLocale, () => {
+      console.log('Locale changed, triggering re-render')
+      this.$forceUpdate()
+    })
+
     this.loadData()
+  },
+  setup() {
+    const { t } = useI18n()
+    return { t }
   },
   methods: {
     async loadData() {
       console.log('Loading reports data...')
       try {
         this.loading = true
+        const { getCurrentFilters } = useFilters()
+        const filters = getCurrentFilters()
 
         // Fetch quarterly data
-        console.log('Fetching quarterly data...')
-        const quarterlyResponse = await axios.get('http://localhost:8001/api/reports/quarterly')
+        console.log('Fetching quarterly data with filters:', filters)
+        const quarterlyResponse = await axios.get('http://localhost:8001/api/reports/quarterly', { params: filters })
         this.quarterlyData = quarterlyResponse.data
         console.log('Quarterly data:', this.quarterlyData)
 
         // Fetch monthly data
-        console.log('Fetching monthly data...')
-        const monthlyResponse = await axios.get('http://localhost:8001/api/reports/monthly-trends')
+        console.log('Fetching monthly data with filters:', filters)
+        const monthlyResponse = await axios.get('http://localhost:8001/api/reports/monthly-trends', { params: filters })
         this.monthlyData = monthlyResponse.data
         console.log('Monthly data:', this.monthlyData)
 
