@@ -1,10 +1,16 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from typing import List, Optional
-from pydantic import BaseModel
-from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders
+from pydantic import BaseModel, ConfigDict
+import os
+import json as json_lib
+from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders, DATA_DIR
 
 app = FastAPI(title="Factory Inventory Management System")
+
+# Configure FastAPI to not exclude None values from responses
+from fastapi.encoders import jsonable_encoder
 
 # Quarter mapping for date filtering
 QUARTER_MAP = {
@@ -82,6 +88,7 @@ class Order(BaseModel):
     category: Optional[str] = None
 
 class DemandForecast(BaseModel):
+    model_config = ConfigDict(exclude_none=False)
     id: str
     item_sku: str
     item_name: str
@@ -89,6 +96,7 @@ class DemandForecast(BaseModel):
     forecasted_demand: int
     trend: str
     period: str
+    unit_cost: Optional[float] = None
 
 class BacklogItem(BaseModel):
     id: str
@@ -119,6 +127,15 @@ class CreatePurchaseOrderRequest(BaseModel):
     unit_cost: float
     expected_delivery_date: str
     notes: Optional[str] = None
+
+class CreateOrderRequest(BaseModel):
+    customer: str
+    items: List[dict]
+    order_date: str
+    expected_delivery: str
+    total_value: float
+    warehouse: Optional[str] = None
+    category: Optional[str] = None
 
 # API endpoints
 @app.get("/")
@@ -161,10 +178,37 @@ def get_order(order_id: str):
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
-@app.get("/api/demand", response_model=List[DemandForecast])
+@app.post("/api/orders", response_model=Order, status_code=201)
+def create_order(request: CreateOrderRequest):
+    """Create a new restocking order and persist to disk"""
+    new_id = str(len(orders) + 1)
+    new_order = {
+        "id": new_id,
+        "order_number": f"ORD-RESTOCK-{len(orders) + 1:04d}",
+        "customer": request.customer,
+        "items": request.items,
+        "status": "Submitted",
+        "order_date": request.order_date,
+        "expected_delivery": request.expected_delivery,
+        "total_value": round(request.total_value, 2),
+        "actual_delivery": None,
+        "warehouse": request.warehouse,
+        "category": request.category,
+    }
+    orders.append(new_order)
+    orders_path = os.path.join(DATA_DIR, "orders.json")
+    with open(orders_path, "w") as f:
+        json_lib.dump(orders, f, indent=2)
+    return new_order
+
+@app.get("/api/demand")
 def get_demand_forecasts():
-    """Get demand forecasts"""
-    return demand_forecasts
+    """Get demand forecasts enriched with unit_cost from inventory"""
+    inv_by_sku = {item["sku"]: item.get("unit_cost") for item in inventory_items}
+    data = [{**f, "unit_cost": inv_by_sku.get(f["item_sku"])} for f in demand_forecasts]
+    # Use custom JSON serializer to preserve null values
+    json_str = json_lib.dumps(data)
+    return JSONResponse(content=json_lib.loads(json_str))
 
 @app.get("/api/backlog", response_model=List[BacklogItem])
 def get_backlog():

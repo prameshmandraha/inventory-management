@@ -6180,5 +6180,57 @@
     "expected_delivery": "2025-11-19T12:30:00",
     "total_value": 9125.0,
     "actual_delivery": "2025-11-18T12:30:00"
+  },
+  {
+    "id": "251",
+    "order_number": "ORD-RESTOCK-0251",
+    "customer": "Test Customer",
+    "items": [
+      {
+        "sku": "TEST-001",
+        "name": "Test Item",
+        "quantity": 5,
+        "unit_price": 10.0
+      }
+    ],
+    "status": "Submitted",
+    "order_date": "2025-09-15T10:00:00",
+    "expected_delivery": "2025-09-22",
+    "total_value": 50.0,
+    "actual_delivery": null,
+    "warehouse": null,
+    "category": null
+  },
+  {
+    "id": "252",
+    "order_number": "ORD-RESTOCK-0252",
+    "customer": "Internal Restock",
+    "items": [
+      {
+        "sku": "WDG-001",
+        "name": "Industrial Widget Type A",
+        "quantity": 150,
+        "unit_price": 45.5
+      },
+      {
+        "sku": "GSK-203",
+        "name": "High-Temperature Gasket",
+        "quantity": 100,
+        "unit_price": 28.75
+      },
+      {
+        "sku": "FLT-405",
+        "name": "Oil Filter Cartridge",
+        "quantity": 150,
+        "unit_price": 12.99
+      }
+    ],
+    "status": "Submitted",
+    "order_date": "2026-05-17T14:30:00Z",
+    "expected_delivery": "2026-05-24",
+    "total_value": 9447.5,
+    "actual_delivery": null,
+    "warehouse": null,
+    "category": null
   }
 ]

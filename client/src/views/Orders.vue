@@ -27,6 +27,55 @@
         </div>
       </div>
 
+      <div v-if="submittedOrders.length > 0" class="card submitted-card">
+        <div class="card-header">
+          <h3 class="card-title">
+            {{ t('orders.submittedOrders') }}
+            <span class="count-badge">{{ submittedOrders.length }}</span>
+          </h3>
+        </div>
+        <div class="table-container">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th class="col-order-number">{{ t('orders.table.orderNumber') }}</th>
+                <th class="col-items">{{ t('orders.table.items') }}</th>
+                <th class="col-value">{{ t('orders.table.totalValue') }}</th>
+                <th class="col-date">{{ t('orders.table.orderDate') }}</th>
+                <th class="col-date">{{ t('orders.table.expectedDelivery') }}</th>
+                <th class="col-date">{{ t('orders.daysUntilDelivery') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in submittedOrders" :key="order.id" class="submitted-row">
+                <td class="col-order-number"><strong>{{ order.order_number }}</strong></td>
+                <td class="col-items">
+                  <details class="items-details">
+                    <summary class="items-summary">
+                      {{ t('orders.itemsCount', { count: order.items.length }) }}
+                    </summary>
+                    <div class="items-dropdown">
+                      <div v-for="item in order.items" :key="item.sku" class="item-entry">
+                        <span class="item-name">{{ item.name }}</span>
+                        <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ currencySymbol }}{{ item.unit_price }}</span>
+                      </div>
+                    </div>
+                  </details>
+                </td>
+                <td class="col-value"><strong>{{ currencySymbol }}{{ order.total_value.toLocaleString() }}</strong></td>
+                <td class="col-date">{{ formatDate(order.order_date) }}</td>
+                <td class="col-date">{{ formatDate(order.expected_delivery) }}</td>
+                <td class="col-date">
+                  <span :class="['badge', daysUntilDelivery(order.expected_delivery) <= 3 ? 'warning' : 'info']">
+                    {{ daysUntilDelivery(order.expected_delivery) }}d
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">{{ t('orders.allOrders') }} ({{ orders.length }})</h3>
@@ -95,6 +144,7 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     const orders = ref([])
+    const submittedOrders = ref([])
 
     // Use shared filters
     const {
@@ -153,16 +203,36 @@ export default {
       })
     }
 
-    onMounted(loadOrders)
+    const daysUntilDelivery = (dateStr) => {
+      const delivery = new Date(dateStr)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      return Math.ceil((delivery - today) / (1000 * 60 * 60 * 24))
+    }
+
+    const loadSubmittedOrders = async () => {
+      try {
+        submittedOrders.value = await api.getOrders({ status: 'Submitted' })
+      } catch (err) {
+        // Non-critical, silently fail
+      }
+    }
+
+    onMounted(() => {
+      loadOrders()
+      loadSubmittedOrders()
+    })
 
     return {
       t,
       loading,
       error,
       orders,
+      submittedOrders,
       getOrdersByStatus,
       getOrderStatusClass,
       formatDate,
+      daysUntilDelivery,
       currencySymbol,
       translateProductName,
       translateCustomerName
@@ -275,5 +345,40 @@ export default {
 .item-meta {
   font-size: 0.813rem;
   color: #64748b;
+}
+
+/* Submitted Orders styling */
+.submitted-card {
+  border-left: 4px solid #3b82f6;
+  margin-bottom: 1.5rem;
+}
+
+.count-badge {
+  background: #3b82f6;
+  color: white;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+.submitted-row {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.submitted-row:hover {
+  background: #eff6ff;
+}
+
+.badge.info {
+  background: #dbeafe;
+  color: #0369a1;
+}
+
+.badge.warning {
+  background: #fef3c7;
+  color: #92400e;
 }
 </style>
